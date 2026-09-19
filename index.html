@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>mk145mc</title>
+  <title>我的主页</title>
   <style>
     body {
       max-width: 760px;
@@ -46,8 +46,9 @@
   </style>
 </head>
 <body>
-  <h1>这里是个人主页</h1>
+  <h1>你好，我是 mk145mc</h1>
 
+  <!-- 选择器 + 按钮 -->
   <div class="jump-box">
     <select id="repoSelect">
       <option value="">加载中…</option>
@@ -61,12 +62,19 @@
   const btn    = document.getElementById('goBtn');
   const tip    = document.getElementById('tip');
 
+  // 站点根地址：第二项没写 http 时会自动拼上它（换成你自己的域名）
+  const BASE = 'https://mk145mc.github.io/';
+
+  // 每条形如 ["名称", "链接或子项目名"]
   function parseRow(row) {
     if (Array.isArray(row)) {
       if (row.length < 2) return null;
-      return { name: String(row[0]).trim(), url: String(row[1]).trim() };
+      let url = String(row[1]).trim();
+      // 不是完整链接就当作本站子项目，拼到站点根地址后面
+      if (!/^https?:\/\//i.test(url)) url = BASE + url.replace(/^\/+/, '');
+      return { name: String(row[0]).trim(), url };
     }
-
+    // 容错：万一某条写成 "名称, 链接" 的字符串
     if (typeof row === 'string') {
       const i = row.indexOf(',');
       if (i === -1) return null;
@@ -96,20 +104,27 @@
     .catch(err => {
       select.innerHTML = '<option value="">加载失败</option>';
       tip.hidden = false;
-      tip.textContent = 'ser.json 加载失败：' + err.message +
-        '（index.html为能找到选项）';
+      // 区分两类错误，避免提示误导
+      if (err instanceof SyntaxError || /JSON|Unexpected|Expected/i.test(err.message)) {
+        tip.textContent = 'ser.json 格式写错了：' + err.message +
+          '。常见原因：数组里用了冒号 : 而不是逗号 , 分隔；或多写了一个尾逗号。';
+      } else {
+        tip.textContent = 'ser.json 加载失败：' + err.message +
+          '。常见原因：本地直接双击打开 index.html 会被浏览器拦截（请用本地服务器预览）。';
+      }
     });
 
-
+  // 点击跳转
   btn.addEventListener('click', () => {
     const url = select.value;
-    if (url) window.open(url, '_blank', 'noopener'); 
+    if (url) window.open(url, '_blank', 'noopener');  // 想在当前页跳转就换成 location.href = url
   });
 
-
+  // 回车也能触发
   select.addEventListener('keydown', e => { if (e.key === 'Enter' && select.value) btn.click(); });
 
-
+  // 想让"选中即跳转"、不用点按钮，取消下一行注释
+  // select.addEventListener('change', () => btn.click());
   </script>
 </body>
 </html>
